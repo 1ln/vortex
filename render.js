@@ -19,6 +19,8 @@ let cam,scene,geometry,mesh,mat;
 
 let cam_target;
 
+const phi = (1. + Math.sqrt(5.)) / 2.;
+
 function init() {
 
     canvas  = $('#canvas')[0];
@@ -29,7 +31,7 @@ function init() {
 
     renderer = new THREE.WebGLRenderer({canvas:canvas,context:context});
 
-    cam = new THREE.PerspectiveCamera(45.,w/h,0.0,1000.0);
+    cam = new THREE.PerspectiveCamera(45.,w/h,0.0,1.0);
 
     nhash = new Math.seedrandom();
     hash = nhash();
@@ -48,6 +50,7 @@ function init() {
         controls.maxDistance = 2.0;
         controls.target = cam_target;
         controls.enableDamping = true;
+        controls.maxPolarAngle = 1. / phi;
         controls.enablePan = false; 
         controls.enabled = true;
 
@@ -101,6 +104,12 @@ ShaderLoader("render.vert","render.frag",
         uniforms["u_cam_target"          ].value = cam_target;
         uniforms["u_hash"                ].value = hash;
         uniforms["u_tex"                 ].value = texture;       
+
+        if(cam.position.lengthSq() < .15) {
+            controls.maxPolarAngle = Math.PI;
+        } else { 
+            controls.maxPolarAngle = 1. / phi;
+        }
 
         controls.update();
         renderer.render(scene,cam);
@@ -163,7 +172,6 @@ $('#canvas').mousedown(function() {
    
     reset = setTimeout(function() {
     mouse_held = true; 
-    hash = nhash();
 
     },2500);
 
