@@ -19,7 +19,16 @@ let cam,scene,geometry,mesh,mat;
 
 let cam_target;
 
-const phi = (1. + Math.sqrt(5.)) / 2.;
+const render = {
+    speed :0.01,
+    aa    :2,  
+    seed  : 13590
+
+};
+
+config.addInput(render,'speed');
+config.addInput(render,'aa');
+config.addInput(render,'seed');
 
 function init() {
 
@@ -29,17 +38,15 @@ function init() {
     w = window.innerWidth;
     h = window.innerHeight;
 
-    renderer = new THREE.WebGLRenderer({canvas:canvas,context:context});
+    renderer = new THREE.WebGLRenderer(
+    { canvas:canvas,context:context });
 
     cam = new THREE.PerspectiveCamera(45.,w/h,0.0,1.0);
 
-    nhash = new Math.seedrandom();
-    hash = nhash();
+    hash = new Math.seedrandom();
+    hash = hash();
 
     mouse = new THREE.Vector2(0.0); 
-    mouse_pressed = 0;
-    mouse_held = 0;
-    swipe_dir = 0;
 
     cam.position.set(0.25,1.25,.75); 
     cam_target  = new THREE.Vector3(0.0);
@@ -50,7 +57,6 @@ function init() {
         controls.maxDistance = 2.0;
         controls.target = cam_target;
         controls.enableDamping = true;
-        controls.maxPolarAngle = 1. / phi;
         controls.enablePan = false; 
         controls.enabled = true;
 
@@ -59,14 +65,11 @@ function init() {
 
     uniforms = {
 
-        "u_time"                : { value : 1.0 },
-        "u_resolution"          : new THREE.Uniform(new THREE.Vector2(w,h)),
-        "u_mouse"               : new THREE.Uniform(new THREE.Vector2()),
-        "u_mouse_pressed"       : { value : mouse_pressed },
-        "u_swipe_dir"           : { value : swipe_dir }, 
-        "u_cam_target"          : new THREE.Uniform(new THREE.Vector3(cam_target)),
-        "u_hash"                : { value: hash },
-        "u_tex"                 : { type:"t", value: texture }
+        "time"       : { value : 1.0 },
+        "resolution" : new THREE.Uniform(new THREE.Vector2(w,h)),
+        "mouse"      : new THREE.Uniform(new THREE.Vector2()),
+        "u_hash"     : { value: hash },
+        "tex"      : { type:"t", value: texture }
 
     };   
 
@@ -97,19 +100,10 @@ ShaderLoader("render.vert","render.frag",
 
         requestAnimationFrame(render);
     
-        uniforms["u_time"                ].value = performance.now();
-        uniforms["u_mouse"               ].value = mouse;
-        uniforms["u_mouse_pressed"       ].value = mouse_pressed;
-        uniforms["u_swipe_dir"           ].value = swipe_dir;
-        uniforms["u_cam_target"          ].value = cam_target;
+        uniforms["time"                ].value = performance.now();
+        uniforms["mouse"               ].value = mouse;
         uniforms["u_hash"                ].value = hash;
-        uniforms["u_tex"                 ].value = texture;       
-
-        if(cam.position.lengthSq() < .15) {
-            controls.maxPolarAngle = Math.PI;
-        } else { 
-            controls.maxPolarAngle = 1. / phi;
-        }
+        uniforms["tex"                 ].value = texture;       
 
         controls.update();
         renderer.render(scene,cam);
@@ -148,22 +142,6 @@ $('#canvas').keydown(function(event) {
         event.preventDefault(); 
    
     }
-
-    if(event.which == 38 ) {
-        event.preventDefault();
-
-    }
-    
-    if(event.which == 39 ) {
-        event.preventDefault();
-
-    }
-
-    if(event.which == 40 ) {
-        event.preventDefault();
-
-    }
-
 });
 
 $('#canvas').mousedown(function() { 
