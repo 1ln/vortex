@@ -4,11 +4,14 @@
 //2020
 
 out vec4 FragColor;
+varying vec2 uVu;
 
 uniform vec2 resolution;
 uniform vec4 mouse;
 uniform float time;
 uniform int seed; 
+
+uniform sampler2D tex;
 
 mat2 m = mat2(0.8,0.6,-0.6,0.8);
 
@@ -65,7 +68,7 @@ void main() {
     vec2 uv = (2. * gl_FragCoord.xy - 
     resolution.xy) / resolution.y; 
     
-    float ra = time*0.1;
+    float ra = time*0.00001;
     mat2 r = mat2(cos(ra),sin(ra),-sin(ra),cos(ra));
 
     float fov = 1.0;
@@ -87,7 +90,11 @@ void main() {
     
     float nl = dd(p.xz*r);
     nl += f6(p.xz+f6(p.yx)) * dot(uv,uv);
-    col = vec3(nl * log((p.y+fd)*fs)/log((fd-fa)*fs));
+    nl += mix(dot(mouse.xy,p.xz),dot(nl*p.xy,mouse.xy),fa*0.001);
+
+    col = vec3(nl*log((p.y+fd)*fs)/log((fd-fa)*fs));
+    col += 0.005*texture(tex,uVu).xyz;
+    
     col = pow(col,vec3(0.4545));
     FragColor = vec4(col,1.);
 
