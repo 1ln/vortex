@@ -4,31 +4,15 @@ let canvas,context;
 
 let renderer;
 let render;
+
 let uniforms;
 
-let reset;
-
-let nhash,hash;  
+let hash; 
 let texture;
 
-let mouse_pressed,mouse_held,mouse;
+let mouse;
 
-let controls;
-
-let cam,scene,geometry,mesh,mat;
-
-let cam_target;
-
-const render = {
-    speed :0.01,
-    aa    :2,  
-    seed  : 13590
-
-};
-
-config.addInput(render,'speed');
-config.addInput(render,'aa');
-config.addInput(render,'seed');
+let cam,scene,geometry,mesh,material;
 
 function init() {
 
@@ -41,35 +25,24 @@ function init() {
     renderer = new THREE.WebGLRenderer(
     { canvas:canvas,context:context });
 
-    cam = new THREE.PerspectiveCamera(45.,w/h,0.0,1.0);
-
     hash = new Math.seedrandom();
-    hash = hash();
 
     mouse = new THREE.Vector2(0.0); 
 
-    cam.position.set(0.25,1.25,.75); 
-    cam_target  = new THREE.Vector3(0.0);
-
-    controls = new THREE.OrbitControls(cam,canvas);
-
-        controls.minDistance = 0.0;
-        controls.maxDistance = 2.0;
-        controls.target = cam_target;
-        controls.enableDamping = true;
-        controls.enablePan = false; 
-        controls.enabled = true;
+    cam = new THREE.PerspectiveCamera(0.0,w/h,0.1,1.0);
 
     scene = new THREE.Scene();
     geometry = new THREE.PlaneBufferGeometry(2,2);
+
+    updateTex(w,h);
 
     uniforms = {
 
         "time"       : { value : 1.0 },
         "resolution" : new THREE.Uniform(new THREE.Vector2(w,h)),
         "mouse"      : new THREE.Uniform(new THREE.Vector2()),
-        "u_hash"     : { value: hash },
-        "tex"      : { type:"t", value: texture }
+        "seed"       : { value: hash.int32() },
+        "tex"        : { type:"t", value: texture }
 
     };   
 
@@ -77,7 +50,7 @@ function init() {
 
 init();
 
-ShaderLoader("render.vert","render.frag",
+ShaderLoader("render.vert","vortex.frag",
 
     function(vertex,fragment) {
 
@@ -100,12 +73,9 @@ ShaderLoader("render.vert","render.frag",
 
         requestAnimationFrame(render);
     
-        uniforms["time"                ].value = performance.now();
-        uniforms["mouse"               ].value = mouse;
-        uniforms["u_hash"                ].value = hash;
-        uniforms["tex"                 ].value = texture;       
-
-        controls.update();
+        uniforms["time"  ].value = performance.now();
+        uniforms["mouse" ].value = mouse;
+    
         renderer.render(scene,cam);
 
         } 
@@ -115,57 +85,34 @@ ShaderLoader("render.vert","render.frag",
     }
 ) 
 
-function updateTex() {
+function updateTex(w,h) {
 
-    let size = 16 * 16;
+    let size = w*h;
     let data = new Uint8Array(3 * size);
 
         for(let i = 0; i < size; i++) {
                              
                 let s =  i * 3;
+                let r = 255 * hash();        
 
-                data[s]     = Math.floor( 255 * nhash()    );
-                data[s+1]   = Math.floor( 255 * nhash()    );
-                data[s+2]   = Math.floor( 255 * nhash()    );   
+                data[s]     = Math.floor(r);
+                data[s+1]   = Math.floor(r);
+                data[s+2]   = Math.floor(r);   
                 
             }
                
-
-     texture = new THREE.DataTexture(tex,16,16,THREE.RGBFormat);
+     texture = new THREE.DataTexture(data,w,h,THREE.RGBFormat);
      texture.magFilter = THREE.LinearFilter;
   
 }
 
 $('#canvas').keydown(function(event) {
  
-    if(event.which == 37) {
+    if(event.which == 82) {
         event.preventDefault(); 
-   
+        window.location.reload();
     }
 });
-
-$('#canvas').mousedown(function() { 
- 
-    mouse_pressed = true;
-   
-    reset = setTimeout(function() {
-    mouse_held = true; 
-
-    },2500);
-
-
-});
-
-$('#canvas').mouseup(function() {
-    
-    mouse_pressed = false;    
-    mouse_held = false;
-    
-    if(reset) {
-        clearTimeout(reset);
-    };
-
-});        
 
 window.addEventListener('mousemove',onMouseMove,false);
 
